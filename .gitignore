@@ -1,0 +1,26 @@
+# Node.js 関連
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ビルド出力
+.next
+out
+
+# 環境変数
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS / Editor
+.DS_Store
+*.swp
+
+# 個人情報を含むファイルとフォルダ
+data/*.json
+
+# adminhiratedesuとreservationshiratedesuを除外
+app/adminhiratedesu/
+app/reservationshiratedesu/
