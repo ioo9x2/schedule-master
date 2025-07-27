@@ -17,10 +17,3 @@ out
 # OS / Editor
 .DS_Store
 *.swp
-
-# 個人情報を含むファイルとフォルダ
-data/*.json
-
-# adminhiratedesuとreservationshiratedesuを除外
-app/adminhiratedesu/
-app/reservationshiratedesu/
