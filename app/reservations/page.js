@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function ReservationViewPage() {
   const [reservations, setReservations] = useState([]);
@@ -79,7 +80,7 @@ export default function ReservationViewPage() {
 
           {/* Navigation */}
           <div className="mb-8">
-            <a 
+            <Link 
               href="/" 
               className="inline-flex items-center px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200"
             >
@@ -87,7 +88,7 @@ export default function ReservationViewPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               トップページに戻る
-            </a>
+            </Link>
           </div>
 
           {/* Filter Controls */}

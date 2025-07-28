@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { sendReservationEmail } from '../lib/emailService';
 
 export default function Page() {
@@ -171,7 +172,7 @@ export default function Page() {
             
             {/* Navigation Links */}
             <div className="mt-8 flex justify-center space-x-4">
-              <a 
+              <Link 
                 href="/reservations"
                 className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
               >
@@ -179,7 +180,7 @@ export default function Page() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h9a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 予約確認
-              </a>
+              </Link>
             </div>
           </div>
 
