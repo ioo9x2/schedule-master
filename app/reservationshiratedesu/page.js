@@ -65,8 +65,8 @@ export default function ReservationsPage() {
     setFormData({
       date: reservation.date,
       time: reservation.time,
-      employeeName: reservation.employeeName,
-      employeeEmail: reservation.employeeEmail
+      employeeName: reservation.employee_name,
+      employeeEmail: reservation.employee_email
     });
     setShowEditForm(true);
   };
@@ -95,7 +95,10 @@ export default function ReservationsPage() {
         },
         body: JSON.stringify({
           id: editingReservation.id,
-          ...formData
+          date: formData.date,
+          time: formData.time,
+          reservationName: formData.employeeName,
+          employeeEmail: formData.employeeEmail
         }),
       });
 
@@ -117,7 +120,7 @@ export default function ReservationsPage() {
   };
 
   const handleDelete = async (reservation) => {
-    if (!confirm(`${reservation.employeeName}の${reservation.date} ${reservation.time}の予約を削除しますか？`)) {
+    if (!confirm(`${reservation.employee_name}の${reservation.date} ${reservation.time}の予約を削除しますか？`)) {
       return;
     }
 
@@ -326,10 +329,10 @@ export default function ReservationsPage() {
                       <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                         {formatDateTime(reservation.date, reservation.time)}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{reservation.employeeName}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{reservation.employeeEmail}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{reservation.employee_name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{reservation.employee_email}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {new Date(reservation.createdAt).toLocaleDateString('ja-JP', {
+                        {new Date(reservation.created_at).toLocaleDateString('ja-JP', {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric',

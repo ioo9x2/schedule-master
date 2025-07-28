@@ -1,39 +1,21 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const dataPath = path.join(process.cwd(), 'data', 'reservations.json');
-
-function readReservations() {
-  try {
-    if (!fs.existsSync(dataPath)) {
-      return [];
-    }
-    const data = fs.readFileSync(dataPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading reservations:', error);
-    return [];
-  }
-}
-
-function writeReservations(reservations) {
-  try {
-    const dir = path.dirname(dataPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(dataPath, JSON.stringify(reservations, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing reservations:', error);
-    return false;
-  }
-}
+import { supabase } from '../../../lib/supabase';
 
 export async function GET() {
   try {
-    const reservations = readReservations();
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch reservations' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(reservations);
   } catch (error) {
     console.error('GET Error:', error);
@@ -46,11 +28,11 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { date, time, employeeName, employeeEmail } = await request.json();
+    const { date, time, reservationName, employeeEmail } = await request.json();
 
-    if (!date || !time || !employeeName || !employeeEmail) {
+    if (!date || !time || !reservationName || !employeeEmail) {
       return NextResponse.json(
-        { error: '日付、時間、名前、メールアドレスは必須です' },
+        { error: '日付、時間、予約者名、メールアドレスは必須です' },
         { status: 400 }
       );
     }
@@ -64,11 +46,13 @@ export async function POST(request) {
       );
     }
 
-    const reservations = readReservations();
-    
-    const existingReservation = reservations.find(
-      reservation => reservation.date === date && reservation.time === time
-    );
+    // Check for existing reservation at the same date and time
+    const { data: existingReservation } = await supabase
+      .from('reservations')
+      .select('id')
+      .eq('date', date)
+      .eq('time', time)
+      .single();
 
     if (existingReservation) {
       return NextResponse.json(
@@ -81,21 +65,26 @@ export async function POST(request) {
       id: Date.now().toString(),
       date,
       time,
-      employeeName,
-      employeeEmail,
-      createdAt: new Date().toISOString(),
+      employee_name: reservationName,
+      employee_email: employeeEmail,
+      created_at: new Date().toISOString(),
     };
 
-    reservations.push(newReservation);
-    
-    if (writeReservations(reservations)) {
-      return NextResponse.json(newReservation, { status: 201 });
-    } else {
+    const { data, error } = await supabase
+      .from('reservations')
+      .insert([newReservation])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase error:', error);
       return NextResponse.json(
         { error: '予約の保存に失敗しました' },
         { status: 500 }
       );
     }
+
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('POST Error:', error);
     return NextResponse.json(
@@ -107,7 +96,7 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
-    const { id, date, time, employeeName, employeeEmail } = await request.json();
+    const { id, date, time, reservationName, employeeEmail } = await request.json();
 
     if (!id) {
       return NextResponse.json(
@@ -116,10 +105,14 @@ export async function PUT(request) {
       );
     }
 
-    const reservations = readReservations();
-    const reservationIndex = reservations.findIndex(res => res.id === id);
+    // Check if reservation exists
+    const { data: existingReservation } = await supabase
+      .from('reservations')
+      .select('*')
+      .eq('id', id)
+      .single();
     
-    if (reservationIndex === -1) {
+    if (!existingReservation) {
       return NextResponse.json(
         { error: '予約が見つかりません' },
         { status: 404 }
@@ -128,11 +121,15 @@ export async function PUT(request) {
 
     // Check for duplicate date/time (excluding current reservation)
     if (date && time) {
-      const existingReservation = reservations.find(
-        reservation => reservation.date === date && reservation.time === time && reservation.id !== id
-      );
+      const { data: duplicateReservation } = await supabase
+        .from('reservations')
+        .select('id')
+        .eq('date', date)
+        .eq('time', time)
+        .neq('id', id)
+        .single();
 
-      if (existingReservation) {
+      if (duplicateReservation) {
         return NextResponse.json(
           { error: 'この時間はすでに予約されています' },
           { status: 409 }
@@ -151,21 +148,28 @@ export async function PUT(request) {
       }
     }
 
-    // Update fields
-    if (date) reservations[reservationIndex].date = date;
-    if (time) reservations[reservationIndex].time = time;
-    if (employeeName) reservations[reservationIndex].employeeName = employeeName;
-    if (employeeEmail) reservations[reservationIndex].employeeEmail = employeeEmail;
-    reservations[reservationIndex].updatedAt = new Date().toISOString();
+    const updateData = {};
+    if (date) updateData.date = date;
+    if (time) updateData.time = time;
+    if (reservationName) updateData.employee_name = reservationName;
+    if (employeeEmail) updateData.employee_email = employeeEmail;
 
-    if (writeReservations(reservations)) {
-      return NextResponse.json(reservations[reservationIndex]);
-    } else {
+    const { data, error } = await supabase
+      .from('reservations')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase error:', error);
       return NextResponse.json(
         { error: '予約の更新に失敗しました' },
         { status: 500 }
       );
     }
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error('PUT Error:', error);
     return NextResponse.json(
@@ -187,26 +191,34 @@ export async function DELETE(request) {
       );
     }
 
-    const reservations = readReservations();
-    const reservationIndex = reservations.findIndex(res => res.id === id);
+    // Check if reservation exists
+    const { data: existingReservation } = await supabase
+      .from('reservations')
+      .select('id')
+      .eq('id', id)
+      .single();
     
-    if (reservationIndex === -1) {
+    if (!existingReservation) {
       return NextResponse.json(
         { error: '予約が見つかりません' },
         { status: 404 }
       );
     }
 
-    reservations.splice(reservationIndex, 1);
+    const { error } = await supabase
+      .from('reservations')
+      .delete()
+      .eq('id', id);
 
-    if (writeReservations(reservations)) {
-      return NextResponse.json({ message: '予約を削除しました' });
-    } else {
+    if (error) {
+      console.error('Supabase error:', error);
       return NextResponse.json(
         { error: '予約の削除に失敗しました' },
         { status: 500 }
       );
     }
+
+    return NextResponse.json({ message: '予約を削除しました' });
   } catch (error) {
     console.error('DELETE Error:', error);
     return NextResponse.json(

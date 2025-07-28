@@ -17,3 +17,7 @@ out
 # OS / Editor
 .DS_Store
 *.swp
+
+# Setup documentation (contains sensitive info)
+EMAIL_SETUP.md
+SUPABASE_MIGRATION.md

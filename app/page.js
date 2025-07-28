@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { sendReservationEmail } from '../lib/emailService';
 
 export default function Page() {
   const [reservations, setReservations] = useState([]);
@@ -112,13 +113,26 @@ export default function Page() {
         body: JSON.stringify({
           date: selectedSlot.date,
           time: selectedSlot.time,
-          employeeName: employee.name,
+          reservationName: employee.name,
           employeeEmail: employeeEmail,
         }),
       });
 
       if (response.ok) {
-        alert('予約が完了しました');
+        // メール送信
+        try {
+          await sendReservationEmail({
+            date: selectedSlot.date,
+            time: selectedSlot.time,
+            reservationName: employee.name,
+            employeeEmail: employeeEmail
+          });
+          console.log('確認メールを送信しました');
+        } catch (emailError) {
+          console.error('メール送信に失敗しましたが、予約は完了しています:', emailError);
+        }
+        
+        alert('予約が完了しました。確認メールを送信いたします。');
         setSelectedSlot(null);
         setSelectedEmployee('');
         setEmployeeEmail('');
@@ -154,6 +168,19 @@ export default function Page() {
             <p className="text-lg text-gray-600">
               月次面談の日程を予約してください（平日のみ）
             </p>
+            
+            {/* Navigation Links */}
+            <div className="mt-8 flex justify-center space-x-4">
+              <a 
+                href="/reservations"
+                className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h9a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                予約確認
+              </a>
+            </div>
           </div>
 
           {/* Date Selector Card */}
