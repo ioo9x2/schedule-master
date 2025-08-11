@@ -20,6 +20,17 @@ CREATE TABLE reservations (
 -- Create unique constraint for date/time combination
 CREATE UNIQUE INDEX reservations_date_time_idx ON reservations (date, time);
 
+-- Create tasks table
+CREATE TABLE tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text,
+  classification text NOT NULL CHECK (classification IN ('面談', '提出物', 'イベント')),
+  due_date date NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT NOW(),
+  updated_at timestamp with time zone NOT NULL DEFAULT NOW()
+);
+
 -- Insert sample employees data (from existing JSON)
 INSERT INTO employees (id, name, email, active) VALUES
 ('1', '瀬川 秀斗', 's.segawa.9s4@tec.witc.co.jp', true),

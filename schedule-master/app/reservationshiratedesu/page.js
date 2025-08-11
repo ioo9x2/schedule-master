@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PasswordProtection from '../../components/PasswordProtection';
 
 export default function ReservationsPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [reservations, setReservations] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -167,7 +169,8 @@ export default function ReservationsPage() {
   const timeSlots = generateTimeSlots();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-100">
+    <PasswordProtection onAuthenticated={() => setIsAuthenticated(true)}>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-100">
       <div className="px-6 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -375,6 +378,7 @@ export default function ReservationsPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </PasswordProtection>
   );
 }

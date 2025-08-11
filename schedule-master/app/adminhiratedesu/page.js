@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PasswordProtection from '../../components/PasswordProtection';
 
 export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -134,7 +136,8 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
+    <PasswordProtection onAuthenticated={() => setIsAuthenticated(true)}>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100">
       <div className="px-6 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -308,6 +311,7 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </PasswordProtection>
   );
 }
