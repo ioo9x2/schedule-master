@@ -25,6 +25,10 @@ export default function Page() {
   const [taskFilterYear, setTaskFilterYear] = useState(currentDate.getFullYear());
   const [taskFilterMonth, setTaskFilterMonth] = useState(currentDate.getMonth());
   
+  // Reservation filter states
+  const [reservationFilterYear, setReservationFilterYear] = useState(currentDate.getFullYear());
+  const [reservationFilterMonth, setReservationFilterMonth] = useState(currentDate.getMonth());
+  
   
   // Task management states
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -196,6 +200,27 @@ export default function Page() {
     } catch (error) {
       console.error('Error deleting task:', error);
       alert('タスクの削除に失敗しました');
+    }
+  };
+
+  const handleDeleteReservation = async (reservationId) => {
+    if (!confirm('この予約を削除しますか？')) return;
+
+    try {
+      const response = await fetch(`/api/reservations?id=${reservationId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('予約を削除しました');
+        fetchReservations();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || '予約の削除に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error deleting reservation:', error);
+      alert('予約の削除に失敗しました');
     }
   };
 
@@ -1033,7 +1058,7 @@ export default function Page() {
                           title: `面談: ${reservation.time}`,
                           due_date: reservation.date,
                           classification: '面談',
-                          description: reservation.reservationName || reservation.employee_name,
+                          description: '',
                           type: 'reservation'
                         }));
                         
@@ -1206,7 +1231,7 @@ export default function Page() {
                   title: `面談: ${reservation.time}`,
                   due_date: reservation.date,
                   classification: '面談',
-                  description: reservation.reservationName || reservation.employee_name,
+                  description: '',
                   type: 'reservation'
                 }));
                 
@@ -1269,7 +1294,40 @@ export default function Page() {
       {/* 面談予約編集ページ */}
       {currentPage === 'reservations' && (
         <div className="flex-1 p-8 relative">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">面談予約管理</h1>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">面談予約管理</h1>
+            
+            {/* フィルター */}
+            <div className="flex gap-4 items-center mb-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">年月:</label>
+                <select
+                  value={reservationFilterYear}
+                  onChange={(e) => setReservationFilterYear(parseInt(e.target.value))}
+                  className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                >
+                  {Array.from({length: 5}, (_, i) => (
+                    <option key={i} value={currentDate.getFullYear() - 2 + i}>
+                      {currentDate.getFullYear() - 2 + i}年
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={reservationFilterMonth}
+                  onChange={(e) => setReservationFilterMonth(parseInt(e.target.value))}
+                  className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value={-1}>全月</option>
+                  {Array.from({length: 12}, (_, i) => (
+                    <option key={i} value={i}>
+                      {new Date(2021, i).toLocaleDateString('ja-JP', { month: 'long' })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+          
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -1283,19 +1341,84 @@ export default function Page() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {reservations.map((reservation) => (
-                    <tr key={reservation.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.time}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">****</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">****@****</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-red-600 hover:text-red-900">削除</button>
+                  {(() => {
+                    // フィルタリング
+                    let filteredReservations = reservations.filter(reservation => {
+                      const reservationDate = new Date(reservation.date);
+                      const yearMatch = reservationDate.getFullYear() === reservationFilterYear;
+                      const monthMatch = reservationFilterMonth === -1 || reservationDate.getMonth() === reservationFilterMonth;
+                      return yearMatch && monthMatch;
+                    });
+                    
+                    // 日付順でソート
+                    filteredReservations.sort((a, b) => {
+                      const dateA = new Date(a.date + ' ' + a.time);
+                      const dateB = new Date(b.date + ' ' + b.time);
+                      return dateA.getTime() - dateB.getTime();
+                    });
+                    
+                    return filteredReservations;
+                  })().length > 0 ? (
+                    (() => {
+                      // フィルタリング
+                      let filteredReservations = reservations.filter(reservation => {
+                        const reservationDate = new Date(reservation.date);
+                        const yearMatch = reservationDate.getFullYear() === reservationFilterYear;
+                        const monthMatch = reservationFilterMonth === -1 || reservationDate.getMonth() === reservationFilterMonth;
+                        return yearMatch && monthMatch;
+                      });
+                      
+                      // 日付順でソート
+                      filteredReservations.sort((a, b) => {
+                        const dateA = new Date(a.date + ' ' + a.time);
+                        const dateB = new Date(b.date + ' ' + b.time);
+                        return dateA.getTime() - dateB.getTime();
+                      });
+                      
+                      return filteredReservations;
+                    })().map((reservation) => (
+                      <tr key={reservation.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.date}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.time}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{reservation.reservationName || reservation.employee_name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{reservation.employeeEmail || reservation.employee_email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button 
+                            onClick={() => handleDeleteReservation(reservation.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            削除
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                        選択された期間に予約はありません
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
+            </div>
+            
+            {/* 件数表示 */}
+            <div className="mt-4 text-sm text-gray-500">
+              {(() => {
+                const filteredCount = reservations.filter(reservation => {
+                  const reservationDate = new Date(reservation.date);
+                  const yearMatch = reservationDate.getFullYear() === reservationFilterYear;
+                  const monthMatch = reservationFilterMonth === -1 || reservationDate.getMonth() === reservationFilterMonth;
+                  return yearMatch && monthMatch;
+                }).length;
+                
+                const monthText = reservationFilterMonth === -1 ? 
+                  `${reservationFilterYear}年全月` : 
+                  `${reservationFilterYear}年${new Date(2021, reservationFilterMonth).toLocaleDateString('ja-JP', { month: 'long' })}`;
+                
+                return `${monthText}: ${filteredCount}件の予約`;
+              })()}
             </div>
           </div>
           
