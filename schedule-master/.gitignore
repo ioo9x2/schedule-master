@@ -21,3 +21,4 @@ out
 # Setup documentation (contains sensitive info)
 EMAIL_SETUP.md
 SUPABASE_MIGRATION.md
+supabase-setup.sql
